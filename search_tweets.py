@@ -1,6 +1,8 @@
 import sys
 import twint
 import json
+import io
+from contextlib import redirect_stdout
 
 # file = sys.argv[0]
 # user = sys.argv[1]
@@ -27,7 +29,12 @@ c.Limit = 100
 c.Store_object = True
 c.Hide_output = True
 
-twint.run.Search(c)
+# Redirect printing of [!] No more scraping keme
+f = io.StringIO()
+with redirect_stdout(f):
+    twint.run.Search(c)
+
+out = f.getvalue()
 
 # Convert tweet objects to dictionary
 tweets = [tweet.__dict__ for tweet in twint.output.tweets_list]

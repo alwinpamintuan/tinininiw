@@ -10,17 +10,16 @@ app.listen(3000, function(){
 //     - error pa pag may "No more data! Scraping will stop now."
 
 // sample run
-//localhost:3000/scrape/twitter/?user=kristinelabador&since=2021-04-19
+// localhost:3000/scrape/twitter/?user=kristinelabador&since=2021-04-19
 
 app.get('/scrape/twitter/', function(req, res){
     var spawn = require("child_process").spawn;
-    var process = spawn('bash', ["./script.sh", 
+    var process = spawn('python3', ["./search_tweets.py", 
                             req.query.user,
                             req.query.search,
                             req.query.since,
                             req.query.until,
                             req.query.near]);
-
 
     var tweetData = ''
 
