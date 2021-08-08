@@ -1,46 +1,20 @@
-const express = require('express');
-const app = express();
+const puppeteer =  require('puppeteer');
 
-app.listen(3000, function(){
-    console.log("Server started at port 3000");
-})
+(async () => {
+    const browser = await puppeteer.launch({headless: false});
+    const page = await browser.newPage();
+    await page.goto('http://quotes.toscrape.com');
 
-// ex. localhost:3000/get-tweets/carlos-yulo
-//     - should display json array with 100 tweets related to carlos yulo
-//     - error pa pag may "No more data! Scraping will stop now."
-
-// sample run
-// localhost:3000/scrape/twitter/?user=kristinelabador&since=2021-04-19
-
-app.get('/scrape/twitter/', function(req, res){
-    var spawn = require("child_process").spawn;
-    var process = spawn('python3', ["./search_tweets.py", 
-                            req.query.user,
-                            req.query.search,
-                            req.query.since,
-                            req.query.until,
-                            req.query.near]);
-
-    var tweetData = ''
-
-    // Accumulate all 'data' chunks to tweetData
-    // then join tweetData as string, parse it as JSON on close
-    process.stdout.on('data', function(data){
-        tweetData += data.toString();
+    await page.waitForSelector(".col-md-4");
+    await page.click(".col-md-4 a");
     
-    }).on('error', e => {
-        console.log(e);
-        res.sendStatus(500);
+    await page.waitForSelector("#username");
+    await page.type("#username", "PedroTech", {delay: 100});
     
-    }).on('close', () => {
-        let result = tweetData;
-        
-        if(result.startsWith('ERROR')) {
-            console.log(result);
-            res.sendStatus(500);
-        }else{
-            // res.send(JSON.parse(tweetData));
-            res.send(tweetData);
-        }
-    })
-})
+    await page.waitForSelector("#password");
+    await page.type("#password", "password", {delay: 100});
+
+    await page.click("input[type=submit");
+
+    await browser.close();
+})();
