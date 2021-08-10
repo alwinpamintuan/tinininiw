@@ -59,18 +59,24 @@ async function getPageContent(page){
             var post = document.createElement('div');
             post.innerHTML = article.innerHTML;
 
+            const post_url = post.querySelector(selectors.DATE)?.getAttribute('href').split('?')[0]
+            const date = post.querySelector(selectors.DATE)?.textContent;
             const author = post.querySelector(selectors.AUTHOR)?.textContent;
             const content = post.querySelector(selectors.POST_CONTENT)?.textContent
-            const date = post.querySelector(selectors.DATE)?.textContent
-            const engagements = post.querySelector(selectors.ENGAGEMENTS)?.textContent
+            const reactions = post.querySelector(selectors.REACTIONS)?.textContent
+            const engagements = Array.from(post.querySelectorAll(selectors.ENGAGEMENTS))?.map(el => el.textContent).slice(0,2)
 
-            pagePosts.push({
-                author,
-                content,
-                engagements
-            })
+            if(author !== undefined || content !== undefined)
+                pagePosts.push({
+                    post_url,
+                    date,
+                    author,
+                    content,
+                    reactions,
+                    engagements 
+                })
         })
-
+        
         return pagePosts;
     }, selectors)
 }

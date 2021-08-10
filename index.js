@@ -16,8 +16,10 @@ app.get('/scrape/facebook/', async function(req, res){
     var topic = req.query.topic
     var limit = req.query.limit
 
-    const browser = await puppeteer.launch({ headless: true, defaultViewport: null})
+    const browser = await puppeteer.launch({ headless: false, defaultViewport: null })
     page = await browser.newPage()
+
+    page.on('console', consoleObj => console.log(consoleObj.text()));
     
     login(page);
 
@@ -55,8 +57,7 @@ app.get('/scrape/twitter/', function(req, res){
             console.log(result);
             res.sendStatus(500);
         }else{
-            // res.send(JSON.parse(tweetData));
-            res.send(tweetData);
+            res.send(JSON.parse(tweetData));
         }
     })
 })
