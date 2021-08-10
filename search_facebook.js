@@ -14,7 +14,7 @@ async function searchFacebookPosts(page, topic, limit = 99999){
 }
 
 async function getPosts(page, limit){
-    let currentHeight, previousHeight, posts = [];
+    let currentHeight, previousHeight;
 
     do {
         // Scroll down
@@ -23,24 +23,30 @@ async function getPosts(page, limit){
         await page.waitForTimeout(2500);
         currentHeight = await page.evaluate("document.body.scrollHeight");
 
-        // Grab all loaded articles
-        const grabArticles = await getPostContent(page);
-        posts = posts.concat(grabArticles);
+        // Count loaded articles
+        const articleCount = await openPostContent(page);
 
-        if(posts.length > limit) break;
+        if(articleCount > limit) break;
 
     }while(previousHeight !== currentHeight)
 
+    const posts = await getPageContent(page)
     return limit !== null ? posts.slice(0, limit) : posts;
 }
 
-async function getPostContent(page){
+async function openPostContent(page){
     
     // Wait until see more links are opened
-    await page.evaluate((selectors) => {
+    return await page.evaluate((selectors) => {
         const see_more = document.querySelectorAll(selectors.SEE_MORE);
         see_more.forEach(button => button.click())
+
+        const articles = document.querySelectorAll(selectors.POST);
+        return articles.length
     }, selectors)
+}
+
+async function getPageContent(page){
 
     return await page.evaluate((selectors) => {
 
