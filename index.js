@@ -1,15 +1,31 @@
+const { searchFacebookPosts, login } = require('./search_facebook')
+const puppeteer = require('puppeteer')
 const express = require('express');
 const app = express();
 
+let page;
+
 app.listen(3000, function(){
     console.log("Server started at port 3000");
+
 })
 
-// ex. localhost:3000/get-tweets/carlos-yulo
-//     - should display json array with 100 tweets related to carlos yulo
-//     - error pa pag may "No more data! Scraping will stop now."
+// localhost:3000/scrape/facebook/?topic=olympics
 
-// sample run
+app.get('/scrape/facebook/', async function(req, res){
+    var topic = req.query.topic
+    var limit = req.query.limit
+
+    const browser = await puppeteer.launch({ headless: true, defaultViewport: null})
+    page = await browser.newPage()
+    
+    login(page);
+
+    const posts = await searchFacebookPosts(page, topic, limit);
+    res.send(posts);
+})
+
+
 // localhost:3000/scrape/twitter/?user=kristinelabador&since=2021-04-19
 
 app.get('/scrape/twitter/', function(req, res){
