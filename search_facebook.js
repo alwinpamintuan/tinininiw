@@ -1,13 +1,11 @@
 const fs = require('fs');
 const config = require('./config/config.json');
 const cookies = require('./config/cookies.json');
-const { document, selectors } = require('./constants');
+const { Selectors } = require('./constants');
 
 async function searchFacebookPosts(page, topic, limit = 99999){
     
-    await page.waitForNavigation({ waitUntil: 'networkidle0'});
     await page.goto(`https://www.facebook.com/search/latest/?q=${topic}`)
-    
     const posts = await getPosts(page, limit);
     
     return JSON.parse(JSON.stringify(posts))
@@ -20,7 +18,7 @@ async function getPosts(page, limit){
         // Scroll down
         previousHeight = await page.evaluate("document.body.scrollHeight")
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
-        await page.waitForTimeout(2500);
+        await page.waitForTimeout(getRndInt(2500, 5000));
         currentHeight = await page.evaluate("document.body.scrollHeight");
 
         // Count loaded articles
@@ -37,21 +35,21 @@ async function getPosts(page, limit){
 async function openPostContent(page){
     
     // Wait until see more links are opened
-    return await page.evaluate((selectors) => {
-        const see_more = document.querySelectorAll(selectors.SEE_MORE);
+    return await page.evaluate((Selectors) => {
+        const see_more = document.querySelectorAll(Selectors.SEE_MORE);
         see_more.forEach(button => button.click())
 
-        const articles = document.querySelectorAll(selectors.POST);
+        const articles = document.querySelectorAll(Selectors.POST);
         return articles.length
-    }, selectors)
+    }, Selectors)
 }
 
 async function getPageContent(page){
 
-    return await page.evaluate((selectors) => {
+    return await page.evaluate((Selectors) => {
 
         // Get post content
-        const articles = document.querySelectorAll(selectors.POST);
+        const articles = document.querySelectorAll(Selectors.POST);
         
         const pagePosts = []
 
@@ -59,12 +57,14 @@ async function getPageContent(page){
             var post = document.createElement('div');
             post.innerHTML = article.innerHTML;
 
-            const post_url = post.querySelector(selectors.DATE)?.getAttribute('href').split('?')[0]
-            const date = post.querySelector(selectors.DATE)?.textContent;
-            const author = post.querySelector(selectors.AUTHOR)?.textContent;
-            const content = post.querySelector(selectors.POST_CONTENT)?.textContent
-            const reactions = post.querySelector(selectors.REACTIONS)?.textContent
-            const engagements = Array.from(post.querySelectorAll(selectors.ENGAGEMENTS))?.map(el => el.textContent).slice(0,2)
+            console.log(post.innerHTML)
+
+            const post_url = post.querySelector(Selectors.POST_URL)?.getAttribute('href').split('?')[0]
+            const date = post.querySelector(Selectors.DATE)?.textContent;
+            const author = post.querySelector(Selectors.AUTHOR)?.textContent;
+            const content = post.querySelector(Selectors.POST_CONTENT)?.textContent
+            const reactions = post.querySelector(Selectors.REACTIONS)?.textContent
+            // const engagements = Array.from(post.querySelectorAll(Selectors.ENGAGEMENTS))?.map(el => el.textContent).slice(0,2)
 
             if(author !== undefined || content !== undefined)
                 pagePosts.push({
@@ -73,12 +73,12 @@ async function getPageContent(page){
                     author,
                     content,
                     reactions,
-                    engagements 
+                    // engagements 
                 })
         })
         
         return pagePosts;
-    }, selectors)
+    }, Selectors)
 }
 
 async function login(page){ 
@@ -96,24 +96,27 @@ async function login(page){
         await page.goto('https://www.facebook.com/login', { waitUntil: 'networkidle0'});
         
         await page.waitForSelector('#email');
-        await page.type('#email', config['email'], {delay: 50 });
+        await page.type('#email', config['email'], {delay: 100 });
 
         await page.waitForSelector('#pass')
         await page.type('#pass', config['password'], { delay: 100});
 
         await page.click('#loginbutton');
 
-        // await page.waitForNavigation({ waitUntil: 'networkidle0'});
+        await page.waitForNavigation({ waitUntil: 'networkidle0'});
 
         // Get current browser page session then write to file
         let currentCookies = await page.cookies();
-        fs.writeFileSync('./cookies.json', JSON.stringify(currentCookies));
+        fs.writeFileSync('./config/cookies.json', JSON.stringify(currentCookies));
     }
+}
 
-    return page
+function getRndInt(min, max){
+    return Math.floor(Math.random() * (max - min)) + min;
 }
 
 module.exports = {
     login,
-    searchFacebookPosts
+    searchFacebookPosts,
+    getRndInt
 };
