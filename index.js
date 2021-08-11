@@ -1,4 +1,4 @@
-const { searchFacebookPosts, login } = require('./search_facebook')
+const { searchFacebookPosts, login, getRndInt } = require('./search_facebook')
 const puppeteer = require('puppeteer')
 const express = require('express');
 const app = express();
@@ -16,15 +16,27 @@ app.get('/scrape/facebook/', async function(req, res){
     var topic = req.query.topic
     var limit = req.query.limit
 
-    const browser = await puppeteer.launch({ headless: false, defaultViewport: null })
-    page = await browser.newPage()
+    const browser = await puppeteer.launch({
+        headless: true,
+        defaultViewport: null,
+        userDataDir: './dataCache'
+    })
 
-    page.on('console', consoleObj => console.log(consoleObj.text()));
+    page = await browser.newPage()
     
-    login(page);
+    await page.setExtraHTTPHeaders({
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8", 
+          "Accept-Encoding": "gzip, deflate, br", 
+          "Accept-Language": "en-US,en;q=0.5", 
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:90.0) Gecko/20100101 Firefox/90.0",
+    })
+
+    await login(page);
+    await page.waitForTimeout(getRndInt(2500, 5000))
 
     const posts = await searchFacebookPosts(page, topic, limit);
-    res.send(posts);
+    console.log(posts)
+    res.send("eyyy");
 })
 
 

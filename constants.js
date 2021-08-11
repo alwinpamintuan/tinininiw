@@ -1,19 +1,27 @@
-const selectors = {
+const Selectors = {
     SEE_MORE: `div[role*="button"].oajrlxb2.g5ia77u1.qu0x051f.esr5mh6w.e9989ue4.r7d6kgcz.rq0escxv.nhd2j8a9.nc684nl6.p7hjln8o.kvgmc6g5.cxmmr5t8.oygrvhab.hcukyx3x.jb3vyjys.rz4wbd8a.qt6c0cv9.a8nywdso.i1ao9s8h.esuyzwwr.f1sip0of.lzcic4wl.oo9gr5id.gpro0wi8.lrazzd5p`,
     POST: `:is(div[role*="article"].lzcic4wl, div[role*="article"].sjgh65i0)`,
     AUTHOR: `:is(h3.lzcic4wl strong span, h2.gmql0nx0 a span)`,
-    POST_CONTENT: `div[data-ad-preview*="message"] span`,
+    POST_CONTENT: `:is(div[data-ad-preview*="message"] span)`,
     MEDIA: `div.l9j0dhe7 a`,
     REACTIONS: `div.l9j0dhe7 span.pcp91wgn`,
     ENGAGEMENTS: `div.bp9cbjyn.j83agx80.pfnyh3mw.p1ueia1e div.gtad4xkn span`,
-    DATE: `span.tojvnm2t.a6sixzi8.abs2jz4q.a8s20v7p a`
+    DATE: `:is(span.tojvnm2t.a6sixzi8.abs2jz4q.a8s20v7p a, span.a8c37x1j.ni8dbmo4.stjgntxs.l9j0dhe7 span)`,
+    POST_URL: `:is(span.tojvnm2t.a6sixzi8.abs2jz4q.a8s20v7p a, div.jb3vyjys.hv4rvrfc.ihqw7lf3.dati1w0a a)`
 }
 
-const document = {
-    SCROLL_HEIGHT: `document.body.scrollHeight`
-}
+// const selectors = {
+//     SEE_MORE: `span[data-sigil*="more"]`,
+//     POST: `div[data-sigil="story-div story-popup-metadata feed-ufi-metadata"]`,
+//     AUTHOR: `h3[data-gt]`,
+//     POST_CONTENT: `div[data-gt] `,
+//     // POST_URL: `:is(div[data-sigil="m-feed-voice-subtitle"])`,
+//     REACTIONS: `div[data-sigil*="reactions-sentence-container"]`,
+//     ENGAGEMENTS: `div._1fnt span._1j-c`,
+//     DATE: `div[data-sigil*="m-feed-voice-subtitle"]`,
+//     MEDIA: ``,
+// }
 
 module.exports = {
-    document,
-    selectors
+    Selectors
 }
