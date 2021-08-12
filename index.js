@@ -3,8 +3,6 @@ const puppeteer = require('puppeteer')
 const express = require('express');
 const app = express();
 
-let page;
-
 app.listen(3000, function(){
     console.log("Server started at port 3000");
 
@@ -23,6 +21,7 @@ app.get('/scrape/facebook/', async function(req, res){
     })
 
     page = await browser.newPage()
+    page.on('console', consoleObj => console.log(consoleObj.text()));
     
     await page.setExtraHTTPHeaders({
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8", 
@@ -34,9 +33,8 @@ app.get('/scrape/facebook/', async function(req, res){
     await login(page);
     await page.waitForTimeout(getRndInt(2500, 5000))
 
-    const posts = await searchFacebookPosts(page, topic, limit);
-    console.log(posts)
-    res.send("eyyy");
+    const posts = await searchFacebookPosts(browser, page, topic, limit);
+    res.send(posts);
 })
 
 

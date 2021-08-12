@@ -3,15 +3,15 @@ const config = require('./config/config.json');
 const cookies = require('./config/cookies.json');
 const { Selectors } = require('./constants');
 
-async function searchFacebookPosts(page, topic, limit = 99999){
+async function searchFacebookPosts(browser, page, topic, limit = 99999){
     
     await page.goto(`https://www.facebook.com/search/latest/?q=${topic}`)
-    const posts = await getPosts(page, limit);
+    const posts = await getPosts(browser, page, limit);
     
     return JSON.parse(JSON.stringify(posts))
 }
 
-async function getPosts(page, limit){
+async function getPosts(browser, page, limit){
     let currentHeight, previousHeight;
 
     do {
@@ -22,63 +22,87 @@ async function getPosts(page, limit){
         currentHeight = await page.evaluate("document.body.scrollHeight");
 
         // Count loaded articles
-        const articleCount = await openPostContent(page);
+        const articleCount = await openSearchResultsContent(page);
 
         if(articleCount > limit) break;
 
     }while(previousHeight !== currentHeight)
 
-    const posts = await getPageContent(page)
+    const posts = await getSearchResultsContent(browser, page)
     return limit !== null ? posts.slice(0, limit) : posts;
 }
 
-async function openPostContent(page){
+async function openSearchResultsContent(page){
     
     // Wait until see more links are opened
     return await page.evaluate((Selectors) => {
         const see_more = document.querySelectorAll(Selectors.SEE_MORE);
         see_more.forEach(button => button.click())
 
-        const articles = document.querySelectorAll(Selectors.POST);
+        // Return number of articles available
+        const articles = document.querySelectorAll(`:is(${Selectors.POST_EXPANDED}, ${Selectors.POST_SEARCHRES})`);
         return articles.length
     }, Selectors)
 }
 
-async function getPageContent(page){
+async function getSearchResultsContent(browser, page){
 
-    return await page.evaluate((Selectors) => {
+    const articles = await page.$$(Selectors.POST_EXPANDED)
 
-        // Get post content
-        const articles = document.querySelectorAll(Selectors.POST);
+    if(articles.length){
+        return await Promise.all(
+            articles.map(async article => {
+                return await getPostContent(article)
+            })
+        )
+    }
+
+    else{
+
+        const searchResultsRefs = await page.$$eval(Selectors.POST_URL_SEARCHRES, el => el.map(x => x.getAttribute('href')))
         
-        const pagePosts = []
+        return await Promise.all(
+            searchResultsRefs.map(async url => {
+                
+                // TODO: Fix ERR_ABORTED
+                // -- Probably because of async goto on single page
 
-        articles.forEach(article => {
-            var post = document.createElement('div');
-            post.innerHTML = article.innerHTML;
+                if(url.startsWith("https://www.facebook.com/")){    
 
-            console.log(post.innerHTML)
+                    await page.goto(url, {waitUntil: 'networkidle0'})
 
-            const post_url = post.querySelector(Selectors.POST_URL)?.getAttribute('href').split('?')[0]
-            const date = post.querySelector(Selectors.DATE)?.textContent;
-            const author = post.querySelector(Selectors.AUTHOR)?.textContent;
-            const content = post.querySelector(Selectors.POST_CONTENT)?.textContent
-            const reactions = post.querySelector(Selectors.REACTIONS)?.textContent
-            // const engagements = Array.from(post.querySelectorAll(Selectors.ENGAGEMENTS))?.map(el => el.textContent).slice(0,2)
+                    // Scrape post
+                    const article = page.querySelector(Selectors.POST_EXPANDED)
+                    await page.waitForTimeout(getRndInt(2500, 5000));
+                    await newTab.close()
 
-            if(author !== undefined || content !== undefined)
-                pagePosts.push({
-                    post_url,
-                    date,
-                    author,
-                    content,
-                    reactions,
-                    // engagements 
-                })
-        })
-        
-        return pagePosts;
-    }, Selectors)
+                    return await getPostContent(article)
+                }
+            })
+        )
+    }
+}
+
+async function getPostContent(post){
+
+    return await page.evaluate((Selectors, post) => {
+        const post_url = post.querySelector(Selectors.POST_URL_EXPANDED)?.getAttribute('href').split('?')[0]
+        const date = post.querySelector(Selectors.DATE)?.textContent;
+        const author = post.querySelector(Selectors.AUTHOR)?.textContent;
+        const content = post.querySelector(Selectors.POST_CONTENT)?.textContent
+        const reactions = post.querySelector(Selectors.REACTIONS)?.textContent
+        // const engagements = post.querySelectorAll(Selectors.ENGAGEMENTS)?.map(el => el.textContent).slice(0,2)
+
+        return {
+            post_url,
+            date,
+            author,
+            content,
+            reactions,
+            // engagements
+        }
+
+    }, Selectors, post)
 }
 
 async function login(page){ 
