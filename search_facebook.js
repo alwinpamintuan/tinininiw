@@ -5,8 +5,9 @@ const { Selectors } = require('./constants');
 
 async function searchFacebookPosts(browser, page, topic, limit = 99999){
     
-    await page.goto(`https://www.facebook.com/search/latest/?q=${topic}`)
+    await page.goto(`https://www.facebook.com/search/posts/?q=${topic}`)
     const posts = await getPosts(browser, page, limit);
+    console.log('Total posts scraped:', posts.length)
     
     return JSON.parse(JSON.stringify(posts))
 }
@@ -52,7 +53,7 @@ async function getSearchResultsContent(browser, page){
     if(articles.length){
         return await Promise.all(
             articles.map(async article => {
-                return await getPostContent(article)
+                return await getPostContent(page, article)
             })
         )
     }
@@ -60,30 +61,40 @@ async function getSearchResultsContent(browser, page){
     else{
 
         const searchResultsRefs = await page.$$eval(Selectors.POST_URL_SEARCHRES, el => el.map(x => x.getAttribute('href')))
-        
-        return await Promise.all(
+        const articles = await Promise.all(
             searchResultsRefs.map(async url => {
                 
-                // TODO: Fix ERR_ABORTED
-                // -- Probably because of async goto on single page
-
                 if(url.startsWith("https://www.facebook.com/")){    
-
-                    await page.goto(url, {waitUntil: 'networkidle0'})
+                    const newTab = await browser.newPage()
+                    await newTab.goto(url, {waitUntil: 'networkidle2', timeout: 0})
 
                     // Scrape post
-                    const article = page.querySelector(Selectors.POST_EXPANDED)
-                    await page.waitForTimeout(getRndInt(2500, 5000));
-                    await newTab.close()
+                    if(newTab !== undefined){
+                        const article = await newTab.$(Selectors.POST_EXPANDED)
 
-                    return await getPostContent(article)
+                        if(article){
+                            const postContent = await getPostContent(newTab, article)
+                        
+                            await newTab.waitForTimeout(getRndInt(1000, 3000));
+                            await newTab.close()
+
+                            return postContent
+                        }
+
+                        await newTab.close()
+                    }
                 }
+
+                await page.waitForTimeout(getRndInt(1000, 2000));
+
             })
         )
+
+        return articles.filter(e => e != null)
     }
 }
 
-async function getPostContent(post){
+async function getPostContent(page, post){
 
     return await page.evaluate((Selectors, post) => {
         const post_url = post.querySelector(Selectors.POST_URL_EXPANDED)?.getAttribute('href').split('?')[0]
@@ -91,7 +102,7 @@ async function getPostContent(post){
         const author = post.querySelector(Selectors.AUTHOR)?.textContent;
         const content = post.querySelector(Selectors.POST_CONTENT)?.textContent
         const reactions = post.querySelector(Selectors.REACTIONS)?.textContent
-        // const engagements = post.querySelectorAll(Selectors.ENGAGEMENTS)?.map(el => el.textContent).slice(0,2)
+        const engagements = Array.from(post.querySelectorAll(Selectors.ENGAGEMENTS))?.map(el => el.textContent).slice(0,2)
 
         return {
             post_url,
@@ -99,7 +110,7 @@ async function getPostContent(post){
             author,
             content,
             reactions,
-            // engagements
+            engagements
         }
 
     }, Selectors, post)

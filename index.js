@@ -21,7 +21,7 @@ app.get('/scrape/facebook/', async function(req, res){
     })
 
     page = await browser.newPage()
-    page.on('console', consoleObj => console.log(consoleObj.text()));
+    // page.on('console', consoleObj => console.log(consoleObj.text()));
     
     await page.setExtraHTTPHeaders({
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8", 
@@ -44,7 +44,7 @@ app.get('/scrape/twitter/', function(req, res){
     var spawn = require("child_process").spawn;
     var process = spawn('python3', ["./search_tweets.py", 
                             req.query.user,
-                            req.query.search,
+                            req.query.topic,
                             req.query.since,
                             req.query.until,
                             req.query.near]);

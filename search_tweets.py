@@ -4,13 +4,6 @@ import json
 import io
 from contextlib import redirect_stdout
 
-# file = sys.argv[0]
-# user = sys.argv[1]
-# search = sys.argv[2]
-# since = sys.argv[3]
-# until = sys.argv[4]
-# near = sys.argv[5]
-
 # Config twint
 c = twint.Config()
 
@@ -40,5 +33,4 @@ out = f.getvalue()
 tweets = [tweet.__dict__ for tweet in twint.output.tweets_list]
 
 # Dump tweet array as json object
-# print(json.dumps(tweets))
-print(tweets)
+print(json.dumps(tweets))
